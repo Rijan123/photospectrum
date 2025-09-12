@@ -26,6 +26,9 @@ mongoose.connect(process.env.MONGO_URI, {
 // ===== ROUTES =====
 const bookingRoutes = require("./routes/bookingRoutes");
 app.use("/api/bookings", bookingRoutes); // all booking routes handled here
+const authRoutes = require("./routes/authRoutes");
+app.use("/api/auth", authRoutes);
+
 
 // ===== START SERVER =====
 const PORT = process.env.PORT || 5000;
