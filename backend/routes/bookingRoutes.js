@@ -31,3 +31,21 @@ router.get("/", authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
+// Delete a booking by ID (Only logged-in users)
+router.delete("/:id", authMiddleware, async (req, res) => {
+  try {
+    const deletedBooking = await Booking.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.id, // ensure user owns the booking
+    });
+
+    if (!deletedBooking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    res.json({ message: "Booking deleted successfully!" });
+  } catch (error) {
+    console.error("Error deleting booking:", error);
+    res.status(500).json({ message: "Failed to delete booking" });
+  }
+});
