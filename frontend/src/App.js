@@ -4,6 +4,7 @@ import Gallery from "./pages/Gallery";
 import Booking from "./pages/Booking";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
+import ProtectedRoute from "./ProtectedRoute";
 
 function App() {
   return (
@@ -23,11 +24,21 @@ function App() {
         {/* Page Routes */}
         <div className="p-6">
           <Routes>
+            {/* Public routes */}
             <Route path="/" element={<Home />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/booking" element={<Booking />} />
-            <Route path="/login" element={<Login />} /> 
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/login" element={<Login />} />
+
+            {/* Protected Admin Route */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <Admin />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </div>
       </div>
