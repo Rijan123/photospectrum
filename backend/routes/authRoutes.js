@@ -5,55 +5,51 @@ const User = require("../models/User");
 
 const router = express.Router();
 
-// @route   POST /api/auth/register
-// @desc    Register admin (One-time setup)
-router.post("/register", async (req, res) => {
-  const { email, password } = req.body;
-
+// REGISTER
+router.post("/login", async (req, res) => {
   try {
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
 
-    // Hash the password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Check if user exists
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Create new admin
-    const newUser = new User({ email, password: hashedPassword });
-    await newUser.save();
+    // Check if password is correct
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid)
+      return res.status(400).json({ message: "Invalid password" });
 
-    res.status(201).json({ message: "Admin registered successfully!" });
+    // Generate token with role included
+    const token = jwt.sign(
+      { id: user._id, role: user.role }, // <-- Add role here
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    // Send back token and user data
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role, // <-- VERY important, frontend needs this
+      },
+    });
   } catch (error) {
-    console.error("Error registering user:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error(error);
+    res.status(500).json({ message: "Error logging in" });
   }
 });
 
-// @route   POST /api/auth/login
-// @desc    Login and return JWT
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
 
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+    await newUser.save();
 
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
-
-    // Create token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
-
-    res.json({ token });
+    res.status(201).json({ message: "User registered successfully!" });
   } catch (error) {
-    console.error("Error logging in:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error(error);
+    res.status(500).json({ message: "Error registering user" });
   }
 });
 
