@@ -16,29 +16,28 @@ export default function Login() {
         body: JSON.stringify({ email, password }),
       });
 
-      // If response is not OK
-      if (!res.ok) {
-        const errorData = await res.json();
-        return alert(errorData.message || "Invalid credentials");
-      }
-
       const data = await res.json();
 
-      // Save token and role
+      // Handle invalid login
+      if (!res.ok) {
+        return alert(data.message || "Invalid login credentials");
+      }
+
+      // ✅ Save token and role in localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.user.role);
 
       alert("Login successful!");
 
-      // Redirect based on role
+      // ✅ Redirect based on role
       if (data.user.role === "admin") {
-        navigate("/admin");
+        navigate("/admin"); // Admin Dashboard
       } else {
-        navigate("/"); // or user-specific dashboard
+        navigate("/"); // User Homepage
       }
     } catch (error) {
       console.error("Login error:", error);
-      alert("Something went wrong. Please try again.");
+      alert("Something went wrong while logging in.");
     }
   };
 
@@ -50,7 +49,7 @@ export default function Login() {
       <h2 className="text-2xl font-bold text-center mb-4">Login</h2>
 
       <input
-        className="border w-full p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="border w-full p-2 rounded"
         placeholder="Email"
         type="email"
         value={email}
@@ -59,7 +58,7 @@ export default function Login() {
       />
 
       <input
-        className="border w-full p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="border w-full p-2 rounded"
         placeholder="Password"
         type="password"
         value={password}

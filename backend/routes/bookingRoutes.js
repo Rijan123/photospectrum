@@ -4,13 +4,14 @@ const authMiddleware = require("../middleware/authMiddleware"); // Import middle
 
 const router = express.Router();
 
-// Create a booking (Only logged-in users)
+// ===== CREATE BOOKING (Logged-in Users Only) =====
 router.post("/", authMiddleware, async (req, res) => {
   try {
     const booking = new Booking({
       ...req.body,
       userId: req.user.id, // attach logged-in user ID
     });
+
     await booking.save();
     res.status(201).json({ message: "Booking created successfully!" });
   } catch (error) {
@@ -19,9 +20,16 @@ router.post("/", authMiddleware, async (req, res) => {
   }
 });
 
-// Get all bookings (Only logged-in users)
+// ===== GET ALL BOOKINGS =====
 router.get("/", authMiddleware, async (req, res) => {
   try {
+    if (req.user.role === "admin") {
+      // ✅ Admins see ALL bookings
+      const bookings = await Booking.find();
+      return res.json(bookings);
+    }
+
+    // ✅ Normal users see only their own bookings
     const bookings = await Booking.find({ userId: req.user.id });
     res.json(bookings);
   } catch (error) {
@@ -30,13 +38,12 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
-module.exports = router;
-// Delete a booking by ID (Only logged-in users)
+// ===== DELETE BOOKING =====
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
     const deletedBooking = await Booking.findOneAndDelete({
       _id: req.params.id,
-      userId: req.user.id, // ensure user owns the booking
+      userId: req.user.id, // ensure only owner can delete
     });
 
     if (!deletedBooking) {
@@ -49,3 +56,5 @@ router.delete("/:id", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Failed to delete booking" });
   }
 });
+
+module.exports = router;

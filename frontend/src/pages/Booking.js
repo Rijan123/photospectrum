@@ -22,8 +22,23 @@ function Booking() {
     e.preventDefault();
 
     try {
-      // Send form data to backend
-      const response = await axios.post("http://localhost:5000/api/bookings", formData);
+      const token = localStorage.getItem("token"); // ✅ Get token from localStorage
+
+      if (!token) {
+        alert("You must be logged in to book a session.");
+        return;
+      }
+
+      const response = await axios.post(
+        "http://localhost:5000/api/bookings",
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // ✅ Send token in headers
+          },
+        }
+      );
 
       if (response.status === 201) {
         alert("Booking submitted successfully!");
@@ -37,7 +52,7 @@ function Booking() {
         });
       }
     } catch (error) {
-      console.error("Error submitting booking:", error);
+      console.error("Error submitting booking:", error.response?.data || error.message);
       alert("There was a problem submitting your booking. Please try again.");
     }
   };

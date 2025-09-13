@@ -6,6 +6,15 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState(""); // Search filter state
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  // ✅ Protect the admin page
+  useEffect(() => {
+    if (role !== "admin") {
+      alert("Access denied! Admins only.");
+      navigate("/login");
+    }
+  }, [role, navigate]);
 
   // Helper fetch function with token auth
   const authFetch = async (url, options = {}) => {
@@ -21,6 +30,7 @@ export default function Admin() {
     // Handle expired or invalid token
     if (res.status === 401 || res.status === 403) {
       localStorage.removeItem("token");
+      localStorage.removeItem("role");
       navigate("/login");
       return null;
     }
@@ -75,6 +85,7 @@ export default function Admin() {
           <button
             onClick={() => {
               localStorage.removeItem("token");
+              localStorage.removeItem("role");
               navigate("/login");
             }}
             className="mt-4 sm:mt-0 bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
