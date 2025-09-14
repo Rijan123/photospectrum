@@ -10,11 +10,11 @@ export default function Admin() {
 
   // ✅ Protect the admin page
   useEffect(() => {
-    if (role !== "admin") {
+    if (!token || role !== "admin") {
       alert("Access denied! Admins only.");
       navigate("/login");
     }
-  }, [role, navigate]);
+  }, [role, token, navigate]);
 
   // Helper fetch function with token auth
   const authFetch = async (url, options = {}) => {
@@ -50,16 +50,26 @@ export default function Admin() {
   const deleteBooking = async (id) => {
     if (!window.confirm("Are you sure you want to delete this booking?")) return;
 
-    const res = await authFetch(`http://localhost:5000/api/bookings/${id}`, {
-      method: "DELETE",
-    });
-    if (!res) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/bookings/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // ✅ Send token
+        },
+      });
 
-    if (res.ok) {
-      alert("Booking deleted successfully!");
-      fetchBookings(); // Refresh table
-    } else {
-      alert("Failed to delete booking");
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(data.message); // ✅ Show success message
+        fetchBookings(); // Refresh table
+      } else {
+        alert(data.message || "Failed to delete booking");
+      }
+    } catch (error) {
+      console.error("Error deleting booking:", error);
+      alert("An error occurred while deleting the booking");
     }
   };
 

@@ -41,10 +41,18 @@ router.get("/", authMiddleware, async (req, res) => {
 // ===== DELETE BOOKING =====
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
-    const deletedBooking = await Booking.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user.id, // ensure only owner can delete
-    });
+    let deletedBooking;
+
+    if (req.user.role === "admin") {
+      // ✅ Admin can delete ANY booking
+      deletedBooking = await Booking.findByIdAndDelete(req.params.id);
+    } else {
+      // ✅ Normal user can only delete their OWN booking
+      deletedBooking = await Booking.findOneAndDelete({
+        _id: req.params.id,
+        userId: req.user.id,
+      });
+    }
 
     if (!deletedBooking) {
       return res.status(404).json({ message: "Booking not found" });
