@@ -11,6 +11,9 @@ function Booking() {
     message: "",
   });
 
+  const [loading, setLoading] = useState(false);
+
+  // Handle input change
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -18,30 +21,37 @@ function Booking() {
     });
   };
 
+  // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem("token"); // ✅ Get token from localStorage
+      const token = localStorage.getItem("token");
+      const role = localStorage.getItem("role");
 
-      if (!token) {
-        alert("You must be logged in to book a session.");
+      // ✅ Check if user is logged in
+      if (!token || role !== "user") {
+        alert("You must be logged in as a user to book a session.");
         return;
       }
 
+      setLoading(true);
+
+      // ✅ Send booking data to backend
       const response = await axios.post(
         "http://localhost:5000/api/bookings",
         formData,
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // ✅ Send token in headers
+            Authorization: `Bearer ${token}`,
           },
         }
       );
 
       if (response.status === 201) {
         alert("Booking submitted successfully!");
+        // Reset form
         setFormData({
           name: "",
           email: "",
@@ -52,14 +62,22 @@ function Booking() {
         });
       }
     } catch (error) {
-      console.error("Error submitting booking:", error.response?.data || error.message);
-      alert("There was a problem submitting your booking. Please try again.");
+      console.error(
+        "Error submitting booking:",
+        error.response?.data || error.message
+      );
+      alert(
+        error.response?.data?.message ||
+          "There was a problem submitting your booking. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Book a Session</h1>
+    <div className="max-w-md mx-auto p-6 bg-white shadow rounded">
+      <h1 className="text-2xl font-bold mb-4 text-center">Book a Session</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
@@ -114,9 +132,12 @@ function Booking() {
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+          disabled={loading}
+          className={`w-full p-2 rounded text-white ${
+            loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
-          Submit Booking
+          {loading ? "Submitting..." : "Submit Booking"}
         </button>
       </form>
     </div>

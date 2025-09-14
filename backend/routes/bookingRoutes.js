@@ -9,11 +9,11 @@ router.post("/", authMiddleware, async (req, res) => {
   try {
     const booking = new Booking({
       ...req.body,
-      userId: req.user.id, // attach logged-in user ID
+      userId: req.user.id, // Attach logged-in user's ID automatically
     });
 
     await booking.save();
-    res.status(201).json({ message: "Booking created successfully!" });
+    res.status(201).json({ message: "Booking created successfully!", booking });
   } catch (error) {
     console.error("Error creating booking:", error);
     res.status(500).json({ message: "Failed to create booking" });
@@ -23,18 +23,46 @@ router.post("/", authMiddleware, async (req, res) => {
 // ===== GET ALL BOOKINGS =====
 router.get("/", authMiddleware, async (req, res) => {
   try {
+    let bookings;
+
     if (req.user.role === "admin") {
-      // ✅ Admins see ALL bookings
-      const bookings = await Booking.find();
-      return res.json(bookings);
+      // ✅ Admin sees ALL bookings with user details
+      bookings = await Booking.find().populate("userId", "name email phone");
+    } else {
+      // ✅ Normal users see only their own bookings
+      bookings = await Booking.find({ userId: req.user.id });
     }
 
-    // ✅ Normal users see only their own bookings
-    const bookings = await Booking.find({ userId: req.user.id });
     res.json(bookings);
   } catch (error) {
     console.error("Error fetching bookings:", error);
     res.status(500).json({ message: "Failed to fetch bookings" });
+  }
+});
+
+// ===== UPDATE BOOKING STATUS (Admin Only) =====
+router.put("/:id/status", authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { status } = req.body;
+
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).populate("userId", "name email phone");
+
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    res.json({ message: "Booking status updated successfully", booking });
+  } catch (error) {
+    console.error("Error updating booking status:", error);
+    res.status(500).json({ message: "Failed to update booking status" });
   }
 });
 

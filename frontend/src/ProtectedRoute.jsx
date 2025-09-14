@@ -1,15 +1,15 @@
 import { Navigate } from "react-router-dom";
 
-export default function ProtectedRoute({ children }) {
+export default function ProtectedRoute({ children, roleRequired }) {
   const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role"); // ✅ Check role
+  const role = localStorage.getItem("role");
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/user-login" replace />;
   }
 
-  if (role !== "admin") {
-    return <Navigate to="/" replace />; // redirect non-admins to home
+  if (roleRequired && role !== roleRequired) {
+    return <Navigate to="/" replace />;
   }
 
   return children;

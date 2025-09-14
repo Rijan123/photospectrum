@@ -7,7 +7,17 @@ const bookingSchema = new mongoose.Schema({
   date: { type: String, required: true },
   time: { type: String, required: true },
   message: { type: String },
-  createdAt: { type: Date, default: Date.now },
+  status: {
+    type: String,
+    enum: ["Pending", "Approved", "Declined"],
+    default: "Pending"
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
+  createdAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model("Booking", bookingSchema);

@@ -15,10 +15,21 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    phone: {
+      type: String,
+      default: "",
+    },
+    address: {
+      type: String,
+      default: "",
+    },
+    dateOfBirth: {
+      type: Date,
+    },
     role: {
       type: String,
-      enum: ["user", "admin"], // only these two roles
-      default: "user",         // new users are regular users by default
+      enum: ["user", "admin"], // either 'user' or 'admin'
+      default: "user",         // default role is user
     },
   },
   { timestamps: true }
