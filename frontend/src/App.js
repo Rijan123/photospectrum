@@ -25,7 +25,7 @@ function App() {
             <li><Link to="/user-login" className="hover:text-gray-300">User Login</Link></li>
             <li><Link to="/register" className="hover:text-gray-300">Register</Link></li>
             <li><Link to="/admin-login" className="hover:text-gray-300">Admin Login</Link></li>
-            <li><Link to="/admin" className="hover:text-gray-300">Admin</Link></li>
+            <li><Link to="/admin" className="hover:text-gray-300">Admin Dashboard</Link></li>
           </ul>
         </nav>
 
@@ -43,7 +43,7 @@ function App() {
             <Route
               path="/admin"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roleRequired="admin">
                   <Admin />
                 </ProtectedRoute>
               }
@@ -51,9 +51,9 @@ function App() {
 
             {/* User Dashboard with Nested Routes */}
             <Route
-              path="/user"
+              path="/user/*"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roleRequired="user">
                   <UserDashboard />
                 </ProtectedRoute>
               }

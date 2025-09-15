@@ -1,110 +1,27 @@
-const express = require("express");
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
-const authMiddleware = require("../middleware/authMiddleware");
 
-const router = express.Router();
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
 
-// ========================= REGISTER =========================
-router.post("/register", async (req, res) => {
-  try {
-    const { name, email, password, role } = req.body;
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new user
-    const newUser = new User({
-      name,
-      email,
-      password: hashedPassword,
-      role: role || "user", // default is "user"
-    });
-
-    await newUser.save();
-    res.status(201).json({ message: "User registered successfully!" });
-  } catch (error) {
-    console.error("Error registering user:", error);
-    res.status(500).json({ message: "Error registering user" });
+  // Ensure token exists
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "No token provided. Authorization denied." });
   }
-});
 
-// ========================= LOGIN =========================
-router.post("/login", async (req, res) => {
+  const token = authHeader.split(" ")[1];
+
   try {
-    const { email, password } = req.body;
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Find user
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    // Attach user data to the request
+    req.user = decoded;
 
-    // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(400).json({ message: "Invalid password" });
-    }
-
-    // Create token
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    res.json({
-      message: "Login successful",
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
+    next(); // Continue to the next middleware or route
   } catch (error) {
-    console.error("Error logging in:", error);
-    res.status(500).json({ message: "Error logging in" });
+    console.error("Token verification error:", error);
+    return res.status(403).json({ message: "Invalid or expired token." });
   }
-});
+};
 
-// ========================= GET PROFILE =========================
-router.get("/profile", authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    res.json(user);
-  } catch (error) {
-    console.error("Error fetching profile:", error);
-    res.status(500).json({ message: "Error fetching profile" });
-  }
-});
-
-// ========================= UPDATE PROFILE =========================
-router.put("/profile", authMiddleware, async (req, res) => {
-  try {
-    const { name, email } = req.body;
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user.id,
-      { name, email },
-      { new: true } // return updated user
-    ).select("-password");
-
-    if (!updatedUser) return res.status(404).json({ message: "User not found" });
-
-    res.json({ message: "Profile updated successfully", user: updatedUser });
-  } catch (error) {
-    console.error("Error updating profile:", error);
-    res.status(500).json({ message: "Error updating profile" });
-  }
-});
-
-module.exports = router;
+module.exports = authMiddleware;

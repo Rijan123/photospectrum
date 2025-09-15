@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import axios from "axios";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminLogin() {
@@ -7,45 +6,43 @@ export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    try {
-      const response = await axios.post("http://localhost:5000/api/auth/login", {
-        email,
-        password,
-      });
+    const res = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-      if (response.data.user.role !== "admin") {
-        alert("Access denied. Only admins can log in here.");
-        return;
-      }
+    const data = await res.json();
 
-      // Save token and role
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("role", response.data.user.role);
-
-      alert("Admin login successful!");
-      navigate("/admin"); // redirect to admin dashboard
-    } catch (error) {
-      console.error("Admin login error:", error.response?.data || error.message);
-      alert(error.response?.data?.message || "Login failed. Please try again.");
+    if (!res.ok) {
+      return alert(data.message || "Login failed");
     }
+
+    // ✅ Check if the logged-in user is an admin
+    if (data.user.role !== "admin") {
+      return alert("Access denied! Admins only.");
+    }
+
+    // Save token and role
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("role", data.user.role);
+
+    navigate("/admin");
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <form
-        onSubmit={handleLogin}
-        className="bg-white p-6 rounded-lg shadow-md w-80"
-      >
-        <h2 className="text-2xl font-bold mb-4 text-center">Admin Login</h2>
+    <div className="max-w-md mx-auto mt-10">
+      <h1 className="text-2xl font-bold mb-4">Admin Login</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="email"
           placeholder="Admin Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 mb-3 border rounded"
+          className="border p-2 w-full"
           required
         />
         <input
@@ -53,12 +50,12 @@ export default function AdminLogin() {
           placeholder="Admin Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 mb-3 border rounded"
+          className="border p-2 w-full"
           required
         />
         <button
           type="submit"
-          className="w-full bg-black text-white p-2 rounded hover:bg-gray-800"
+          className="w-full bg-gray-800 text-white p-2 rounded"
         >
           Login
         </button>

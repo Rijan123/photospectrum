@@ -6,7 +6,13 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// ========================= REGISTER =========================
+/**
+ * =========================
+ * REGISTER NEW USER
+ * =========================
+ * Only Admins should be able to create other admins,
+ * but regular users can register themselves as "user".
+ */
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -37,7 +43,11 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// ========================= LOGIN =========================
+/**
+ * =========================
+ * LOGIN USER
+ * =========================
+ */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -75,7 +85,12 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// ========================= GET PROFILE =========================
+/**
+ * =========================
+ * GET USER PROFILE
+ * =========================
+ * Requires user to be logged in
+ */
 router.get("/profile", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password"); // exclude password
@@ -86,6 +101,36 @@ router.get("/profile", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("Error fetching profile:", error);
     res.status(500).json({ message: "Error fetching profile" });
+  }
+});
+
+/**
+ * =========================
+ * UPDATE USER PROFILE
+ * =========================
+ * Allows logged-in users to update their own info
+ */
+router.put("/profile", authMiddleware, async (req, res) => {
+  try {
+    const { name, email } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { name, email },
+      { new: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ message: "Error updating profile" });
   }
 });
 
