@@ -10,8 +10,8 @@ const router = express.Router();
  * =========================
  * REGISTER NEW USER
  * =========================
- * Only Admins should be able to create other admins,
- * but regular users can register themselves as "user".
+ * - Default role is "user".
+ * - Admins can create other admins via role.
  */
 router.post("/register", async (req, res) => {
   try {
@@ -31,7 +31,7 @@ router.post("/register", async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: role || "user", // default role is "user"
+      role: role || "user", // default to user if no role provided
     });
 
     await newUser.save();
@@ -62,7 +62,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    // Create token with user role
+    // Create token
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -89,7 +89,7 @@ router.post("/login", async (req, res) => {
  * =========================
  * GET USER PROFILE
  * =========================
- * Requires user to be logged in
+ * Returns user info (excluding password)
  */
 router.get("/profile", authMiddleware, async (req, res) => {
   try {
@@ -108,16 +108,16 @@ router.get("/profile", authMiddleware, async (req, res) => {
  * =========================
  * UPDATE USER PROFILE
  * =========================
- * Allows logged-in users to update their own info
+ * Allows logged-in users to update their own profile info
  */
 router.put("/profile", authMiddleware, async (req, res) => {
   try {
-    const { name, email } = req.body;
+    const { name, email, phone, address, dateOfBirth } = req.body;
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
-      { name, email },
-      { new: true }
+      { name, email, phone, address, dateOfBirth },
+      { new: true } // return updated user
     ).select("-password");
 
     if (!updatedUser) {

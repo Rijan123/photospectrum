@@ -39,7 +39,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/admin-login" element={<AdminLogin />} />
 
-            {/* Admin Protected */}
+            {/* Admin Protected Route */}
             <Route
               path="/admin"
               element={
@@ -51,16 +51,16 @@ function App() {
 
             {/* User Dashboard with Nested Routes */}
             <Route
-              path="/user/*"
+              path="/user"
               element={
                 <ProtectedRoute roleRequired="user">
                   <UserDashboard />
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Booking />} />
-              <Route path="booking" element={<Booking />} />
+              <Route index element={<Profile />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="booking" element={<Booking />} />
               <Route path="history" element={<History />} />
             </Route>
           </Routes>

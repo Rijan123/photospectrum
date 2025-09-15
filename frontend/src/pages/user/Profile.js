@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 export default function Profile() {
-  const [profile, setProfile] = useState({ name: "", email: "" });
+  const [profile, setProfile] = useState({ name: "", email: "", phone: "", address: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -35,11 +35,16 @@ export default function Profile() {
       setSaving(true);
       const res = await axios.put(
         "http://localhost:5000/api/auth/profile",
-        { name: profile.name, email: profile.email },
+        {
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone,
+          address: profile.address,
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      alert(res.data.message);
+      alert(res.data.message || "Profile updated successfully!");
       setProfile(res.data.user);
     } catch (error) {
       console.error("Error updating profile:", error.response?.data || error.message);
@@ -52,8 +57,18 @@ export default function Profile() {
   if (loading) return <p>Loading profile...</p>;
 
   return (
-    <div className="max-w-md mx-auto p-4 bg-white shadow rounded">
-      <h1 className="text-2xl font-bold mb-4">My Profile</h1>
+    <div className="max-w-lg mx-auto p-6 bg-white shadow-md rounded-lg">
+      <h1 className="text-3xl font-bold mb-6 text-center">My Profile</h1>
+
+      {/* Profile Picture */}
+      <div className="flex flex-col items-center mb-6">
+        <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xl">
+          {profile.name.charAt(0).toUpperCase()}
+        </div>
+        <p className="mt-2 text-gray-600">{profile.name}</p>
+      </div>
+
+      {/* Profile Form */}
       <div className="space-y-4">
         <div>
           <label className="block mb-1 font-medium">Name</label>
@@ -75,6 +90,29 @@ export default function Profile() {
             onChange={handleChange}
             className="w-full p-2 border rounded"
           />
+        </div>
+
+        <div>
+          <label className="block mb-1 font-medium">Phone</label>
+          <input
+            type="text"
+            name="phone"
+            value={profile.phone}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            placeholder="e.g., +1 234 567 890"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1 font-medium">Address</label>
+          <textarea
+            name="address"
+            value={profile.address}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            placeholder="Enter your address"
+          ></textarea>
         </div>
 
         <button
