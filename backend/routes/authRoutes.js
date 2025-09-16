@@ -3,16 +3,28 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const authMiddleware = require("../middleware/authMiddleware");
+const multer = require("multer");
+const path = require("path");
 
 const router = express.Router();
 
-/**
- * =========================
- * REGISTER NEW USER
- * =========================
- * - Default role is "user".
- * - Admins can create other admins via role.
- */
+/* =========================
+   MULTER SETUP FOR IMAGE UPLOAD
+   ========================= */
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // make sure this folder exists in backend
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage });
+
+/* =========================
+   REGISTER NEW USER
+   ========================= */
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -31,7 +43,7 @@ router.post("/register", async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: role || "user", // default to user if no role provided
+      role: role || "user", // default role is "user"
     });
 
     await newUser.save();
@@ -43,16 +55,14 @@ router.post("/register", async (req, res) => {
   }
 });
 
-/**
- * =========================
- * LOGIN USER
- * =========================
- */
+/* =========================
+   LOGIN USER
+   ========================= */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user by email
+    // Find user
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -62,7 +72,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    // Create token
+    // Generate token
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -85,18 +95,14 @@ router.post("/login", async (req, res) => {
   }
 });
 
-/**
- * =========================
- * GET USER PROFILE
- * =========================
- * Returns user info (excluding password)
- */
+/* =========================
+   GET USER PROFILE
+   ========================= */
 router.get("/profile", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password"); // exclude password
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!user) return res.status(404).json({ message: "User not found" });
+
     res.json(user);
   } catch (error) {
     console.error("Error fetching profile:", error);
@@ -104,34 +110,39 @@ router.get("/profile", authMiddleware, async (req, res) => {
   }
 });
 
-/**
- * =========================
- * UPDATE USER PROFILE
- * =========================
- * Allows logged-in users to update their own profile info
- */
-router.put("/profile", authMiddleware, async (req, res) => {
-  try {
-    const { name, email, phone, address, dateOfBirth } = req.body;
+/* =========================
+   UPDATE USER PROFILE WITH IMAGE
+   ========================= */
+router.put(
+  "/profile",
+  authMiddleware,
+  upload.single("profileImage"),
+  async (req, res) => {
+    try {
+      const { name, email, phone, address, dateOfBirth } = req.body;
 
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user.id,
-      { name, email, phone, address, dateOfBirth },
-      { new: true } // return updated user
-    ).select("-password");
+      const updateData = { name, email, phone, address, dateOfBirth };
 
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
+      // If a new image is uploaded
+      if (req.file) {
+        updateData.profileImage = req.file.filename;
+      }
+
+      const updatedUser = await User.findByIdAndUpdate(
+        req.user.id,
+        updateData,
+        { new: true }
+      ).select("-password");
+
+      if (!updatedUser)
+        return res.status(404).json({ message: "User not found" });
+
+      res.json({ message: "Profile updated successfully", user: updatedUser });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Error updating profile" });
     }
-
-    res.json({
-      message: "Profile updated successfully",
-      user: updatedUser,
-    });
-  } catch (error) {
-    console.error("Error updating profile:", error);
-    res.status(500).json({ message: "Error updating profile" });
   }
-});
+);
 
 module.exports = router;

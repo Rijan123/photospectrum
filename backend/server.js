@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const path = require("path"); // ✅ Added for proper static path handling
 require("dotenv").config();
 
 const app = express();
@@ -9,26 +10,30 @@ const app = express();
 app.use(cors()); // Allow requests from frontend
 app.use(express.json()); // Parse JSON data from requests
 
-// ✅ Log every incoming request
+// ✅ Serve static files from "uploads" folder
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// ✅ Log every incoming request for debugging
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
 
 // ===== CONNECT TO MONGODB =====
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log("MongoDB connected successfully"))
-.catch(err => console.error("MongoDB connection error:", err));
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("MongoDB connected successfully"))
+  .catch((err) => console.error("MongoDB connection error:", err));
 
 // ===== ROUTES =====
 const bookingRoutes = require("./routes/bookingRoutes");
-app.use("/api/bookings", bookingRoutes); // all booking routes handled here
 const authRoutes = require("./routes/authRoutes");
-app.use("/api/auth", authRoutes);
 
+app.use("/api/bookings", bookingRoutes); // Booking routes
+app.use("/api/auth", authRoutes); // Auth routes
 
 // ===== START SERVER =====
 const PORT = process.env.PORT || 5000;

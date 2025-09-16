@@ -26,10 +26,17 @@ const userSchema = new mongoose.Schema(
     dateOfBirth: {
       type: Date,
     },
+
+    // ✅ Added this for storing profile picture filename
+    profileImage: {
+      type: String,
+      default: "", // stores filename like "1727690438123.jpg"
+    },
+
     role: {
       type: String,
       enum: ["user", "admin"], // either 'user' or 'admin'
-      default: "user",         // default role is user
+      default: "user", // default role is user
     },
   },
   { timestamps: true }
