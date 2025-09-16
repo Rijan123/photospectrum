@@ -1,59 +1,115 @@
-import React, { useEffect } from "react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
+import {
+  UserCircleIcon,
+  CalendarDaysIcon,
+  ClipboardDocumentListIcon,
+  ArrowLeftOnRectangleIcon,
+} from "@heroicons/react/24/outline";
+import axios from "axios";
 
 export default function UserDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [profile, setProfile] = useState(null);
+
   const role = localStorage.getItem("role");
   const token = localStorage.getItem("token");
 
-  // Redirect to login if not a logged-in user
+  // ✅ Protect the dashboard so only logged-in users can access
   useEffect(() => {
     if (!token || role !== "user") {
       alert("Access denied! Please login as a user.");
       navigate("/user-login");
+    } else {
+      fetchProfile();
     }
   }, [token, role, navigate]);
 
+  // Fetch logged-in user's profile
+  const fetchProfile = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/auth/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setProfile(res.data);
+    } catch (error) {
+      console.error("Error fetching profile:", error.response?.data || error.message);
+    }
+  };
+
+  // Highlight active link
+  const isActive = (path) =>
+    location.pathname.includes(path) ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-700";
+
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className="w-64 bg-gray-900 text-white p-6 space-y-4">
-        <h2 className="text-xl font-bold mb-6">User Dashboard</h2>
-        <ul className="space-y-3">
-          <li>
-            <Link to="profile" className="block hover:bg-gray-700 p-2 rounded">
-              Profile
-            </Link>
-          </li>
-          <li>
-            <Link to="booking" className="block hover:bg-gray-700 p-2 rounded">
-              Book a Session
-            </Link>
-          </li>
-          <li>
-            <Link to="history" className="block hover:bg-gray-700 p-2 rounded">
-              Booking History
-            </Link>
-          </li>
-        </ul>
+      <aside className="w-72 bg-gray-900 text-white flex flex-col">
+        {/* Profile Section */}
+        <div className="p-6 text-center border-b border-gray-700">
+          <div className="flex flex-col items-center">
+            <img
+              src={
+                profile?.profileImage
+                  ? `http://localhost:5000/uploads/${profile.profileImage}`
+                  : "https://via.placeholder.com/80"
+              }
+              alt="Profile"
+              className="w-20 h-20 rounded-full border-4 border-gray-600 object-cover"
+            />
+            <h2 className="mt-3 text-lg font-semibold">{profile?.name || "User"}</h2>
+            <p className="text-gray-400 text-sm">{profile?.email}</p>
+          </div>
+        </div>
 
-        <button
-          onClick={() => {
-            localStorage.removeItem("token");
-            localStorage.removeItem("role");
-            navigate("/user-login");
-          }}
-          className="mt-6 bg-red-600 w-full p-2 rounded hover:bg-red-700"
-        >
-          Logout
-        </button>
-      </div>
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-2">
+          <Link
+            to="profile"
+            className={`flex items-center gap-3 px-3 py-2 rounded transition ${isActive("profile")}`}
+          >
+            <UserCircleIcon className="h-5 w-5" />
+            Profile
+          </Link>
 
-      {/* Main Content Area */}
-      <div className="flex-1 p-6 bg-gray-100 overflow-y-auto">
-        {/* The nested routes will load here */}
+          <Link
+            to="booking"
+            className={`flex items-center gap-3 px-3 py-2 rounded transition ${isActive("booking")}`}
+          >
+            <CalendarDaysIcon className="h-5 w-5" />
+            Book a Session
+          </Link>
+
+          <Link
+            to="history"
+            className={`flex items-center gap-3 px-3 py-2 rounded transition ${isActive("history")}`}
+          >
+            <ClipboardDocumentListIcon className="h-5 w-5" />
+            Booking History
+          </Link>
+        </nav>
+
+        {/* Logout */}
+        <div className="p-4 border-t border-gray-700">
+          <button
+            onClick={() => {
+              localStorage.removeItem("token");
+              localStorage.removeItem("role");
+              navigate("/user-login");
+            }}
+            className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-2 rounded transition"
+          >
+            <ArrowLeftOnRectangleIcon className="h-5 w-5" />
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 p-8 overflow-y-auto">
         <Outlet />
-      </div>
+      </main>
     </div>
   );
 }
