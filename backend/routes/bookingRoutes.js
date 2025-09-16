@@ -41,30 +41,27 @@ router.get("/", authMiddleware, async (req, res) => {
 });
 
 // ===== UPDATE BOOKING STATUS (Admin Only) =====
+// Update booking status
 router.put("/:id/status", authMiddleware, async (req, res) => {
   try {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
     const { status } = req.body;
-
-    const booking = await Booking.findByIdAndUpdate(
+    const updatedBooking = await Booking.findByIdAndUpdate(
       req.params.id,
       { status },
       { new: true }
-    ).populate("userId", "name email phone");
+    );
 
-    if (!booking) {
+    if (!updatedBooking) {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    res.json({ message: "Booking status updated successfully", booking });
+    res.json({ message: `Booking ${status}`, booking: updatedBooking });
   } catch (error) {
     console.error("Error updating booking status:", error);
     res.status(500).json({ message: "Failed to update booking status" });
   }
 });
+
 
 // ===== DELETE BOOKING =====
 router.delete("/:id", authMiddleware, async (req, res) => {
