@@ -11,7 +11,7 @@ router.post("/", authMiddleware, async (req, res) => {
   try {
     const booking = new Booking({
       ...req.body,
-      status: "Pending", // Default status is always Pending
+      status: "pending", // <-- FIXED: always lowercase
       userId: req.user.id,
     });
 
@@ -31,10 +31,10 @@ router.get("/", authMiddleware, async (req, res) => {
     let bookings;
 
     if (req.user.role === "admin") {
-      // Admin sees ALL bookings with user details
+      // Admin sees ALL bookings
       bookings = await Booking.find().populate("userId", "name email phone");
     } else {
-      // Regular user sees ONLY their own bookings
+      // User sees ONLY their bookings
       bookings = await Booking.find({ userId: req.user.id });
     }
 
@@ -52,8 +52,8 @@ router.put("/:id/status", authMiddleware, async (req, res) => {
   try {
     const { status } = req.body;
 
-    // ✅ Validate status (Title Case)
-    const validStatuses = ["Accepted", "Declined"];
+    // ✅ Validate status
+    const validStatuses = ["accepted", "declined"];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: "Invalid status value" });
     }
