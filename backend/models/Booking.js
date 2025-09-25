@@ -8,11 +8,11 @@ const bookingSchema = new mongoose.Schema({
   time: { type: String, required: true },
   message: { type: String },
 
-  // NEW FIELD to track booking status
+  // FIX: Status field uses consistent uppercase values
   status: {
     type: String,
-    enum: ["pending", "accepted", "declined"],
-    default: "pending",
+    enum: ["Pending", "Accepted", "Declined"], // ✅ Match frontend values
+    default: "Pending", // ✅ Default to Pending
   },
 
   userId: {

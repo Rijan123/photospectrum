@@ -13,7 +13,7 @@ function Booking() {
 
   const [loading, setLoading] = useState(false);
 
-  // Handle input change
+  // Handle input changes
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -21,7 +21,7 @@ function Booking() {
     });
   };
 
-  // Handle form submit
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -29,18 +29,21 @@ function Booking() {
       const token = localStorage.getItem("token");
       const role = localStorage.getItem("role");
 
-      // ✅ Check if user is logged in
+      // ✅ Ensure user is logged in
       if (!token || role !== "user") {
-        alert("You must be logged in as a user to book a session.");
+        alert("You must be logged in as a user to make a booking.");
         return;
       }
 
       setLoading(true);
 
-      // ✅ Send booking data to backend
+      // ✅ Send booking data with default status
       const response = await axios.post(
         "http://localhost:5000/api/bookings",
-        formData,
+        {
+          ...formData,
+          status: "Pending", // <-- Ensures booking always starts as Pending
+        },
         {
           headers: {
             "Content-Type": "application/json",
@@ -50,8 +53,7 @@ function Booking() {
       );
 
       if (response.status === 201) {
-        alert("Booking submitted successfully!");
-        // Reset form
+        alert("Booking submitted successfully and is now pending approval!");
         setFormData({
           name: "",
           email: "",
