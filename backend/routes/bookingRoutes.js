@@ -11,8 +11,8 @@ router.post("/", authMiddleware, async (req, res) => {
   try {
     const booking = new Booking({
       ...req.body,
-      userId: req.user.id, // automatically assign logged-in user
-      status: "pending",   // default status
+      status: "Pending", // Default status is always Pending
+      userId: req.user.id,
     });
 
     await booking.save();
@@ -34,7 +34,7 @@ router.get("/", authMiddleware, async (req, res) => {
       // Admin sees ALL bookings with user details
       bookings = await Booking.find().populate("userId", "name email phone");
     } else {
-      // Regular user sees ONLY their bookings
+      // Regular user sees ONLY their own bookings
       bookings = await Booking.find({ userId: req.user.id });
     }
 
@@ -46,18 +46,19 @@ router.get("/", authMiddleware, async (req, res) => {
 });
 
 /* =========================
-   UPDATE BOOKING STATUS (Admin Only)
+   UPDATE BOOKING STATUS (ADMIN ONLY)
    ========================= */
 router.put("/:id/status", authMiddleware, async (req, res) => {
   try {
     const { status } = req.body;
 
-    // Ensure only valid status values
-    if (!["accepted", "declined"].includes(status)) {
+    // ✅ Validate status (Title Case)
+    const validStatuses = ["Accepted", "Declined"];
+    if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: "Invalid status value" });
     }
 
-    // Ensure only admins can change booking status
+    // ✅ Only admins can update booking status
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Not authorized to update status" });
     }
@@ -72,7 +73,10 @@ router.put("/:id/status", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    res.json({ message: `Booking ${status} successfully`, booking: updatedBooking });
+    res.json({
+      message: `Booking ${status} successfully`,
+      booking: updatedBooking,
+    });
   } catch (error) {
     console.error("Error updating booking status:", error);
     res.status(500).json({ message: "Failed to update booking status" });
