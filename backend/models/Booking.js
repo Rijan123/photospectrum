@@ -7,17 +7,21 @@ const bookingSchema = new mongoose.Schema({
   date: { type: String, required: true },
   time: { type: String, required: true },
   message: { type: String },
+
+  // NEW FIELD to track booking status
   status: {
     type: String,
-    enum: ["Pending", "Approved", "Declined"],
-    default: "Pending"
+    enum: ["pending", "accepted", "declined"],
+    default: "pending",
   },
+
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true
+    required: true,
   },
-  createdAt: { type: Date, default: Date.now }
+
+  createdAt: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model("Booking", bookingSchema);
